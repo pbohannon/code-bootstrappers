@@ -1,0 +1,151 @@
+# {project_title} Monorepo
+
+A production-ready monorepo containing a FastAPI backend, {frontend_type} frontend, and shared utilities.
+
+## 🏗️ Architecture
+
+```
+{project_name}/
+├── backend/          # FastAPI application
+├── frontend/         # {frontend_type} application
+├── shared/           # Shared types and utilities
+├── infrastructure/   # Docker, Kubernetes, Terraform configs
+├── scripts/          # Automation scripts
+└── tools/           # Development tools
+```
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+- Python 3.12+
+- Node.js 18+
+- Poetry
+- Docker and Docker Compose
+- Make
+
+### Installation
+
+1. Clone the repository:
+   ```bash
+   cd {project_name}
+   ```
+
+2. Install all dependencies:
+   ```bash
+   make install
+   ```
+
+3. Copy environment files:
+   ```bash
+   cp backend/.env.example backend/.env
+   cp frontend/.env.example frontend/.env
+   ```
+
+4. Start development servers:
+   ```bash
+   make dev
+   ```
+
+The services will be available at:
+- Backend API: http://localhost:8000
+- Frontend: http://localhost:3000
+- API Documentation: http://localhost:8000/docs
+
+## 📚 Documentation
+
+- [Backend Documentation](./backend/README.md)
+- [Frontend Documentation](./frontend/README.md)
+- [Infrastructure Guide](./infrastructure/README.md)
+- [Development Guide](./docs/development.md)
+
+## 🛠️ Development
+
+### Available Commands
+
+```bash
+make help          # Show all available commands
+make dev           # Start all services in development mode
+make test          # Run all tests
+make lint          # Run all linters
+make format        # Format all code
+make types         # Generate TypeScript types from Pydantic schemas
+make build         # Build all services for production
+```
+
+### Working on Specific Services
+
+```bash
+# Backend only
+make dev-backend
+make test-backend
+
+# Frontend only
+make dev-frontend
+make test-frontend
+```
+
+### Database Operations
+
+```bash
+make migrate                     # Run database migrations
+make db-create message="..."    # Create new migration
+make db-reset                    # Reset database and seed data
+```
+
+## 🧪 Testing
+
+The monorepo uses:
+- **Backend**: Pytest with async support
+- **Frontend**: Jest/Vitest (depending on framework)
+- **E2E**: Playwright (optional)
+
+Run all tests:
+```bash
+make test
+```
+
+## 📦 Type Safety
+
+This monorepo maintains type safety across the stack:
+1. Backend uses Pydantic for runtime validation
+2. TypeScript types are auto-generated from Pydantic schemas
+3. Frontend consumes these types for compile-time safety
+
+Generate types:
+```bash
+make types
+```
+
+## 🐳 Docker
+
+### Development
+```bash
+make docker-up    # Start all services
+make docker-down  # Stop all services
+make docker-logs  # View logs
+```
+
+### Production
+```bash
+docker-compose -f infrastructure/docker/docker-compose.prod.yml up
+```
+
+## 📈 CI/CD
+
+The monorepo uses GitHub Actions for:
+- Running tests on every PR
+- Type checking and linting
+- Building Docker images
+- Deploying to staging/production
+
+## 🤝 Contributing
+
+1. Create a feature branch
+2. Make your changes
+3. Run tests and linting
+4. Submit a PR
+
+## 📄 License
+
+MIT

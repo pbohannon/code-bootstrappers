@@ -1,0 +1,109 @@
+# Monorepo Makefile for orchestrating all services
+
+.PHONY: help install dev test lint format build clean docker-up docker-down
+
+help:
+	@echo "Monorepo Management Commands:"
+	@echo "  install      Install all dependencies (backend + frontend)"
+	@echo "  dev          Start all services in development mode"
+	@echo "  dev-backend  Start only backend in development mode"
+	@echo "  dev-frontend Start only frontend in development mode"
+	@echo "  test         Run all tests"
+	@echo "  lint         Run all linters"
+	@echo "  format       Format all code"
+	@echo "  build        Build all services"
+	@echo "  clean        Remove all cache and build files"
+	@echo "  docker-up    Start all services with Docker"
+	@echo "  docker-down  Stop all Docker services"
+	@echo "  types        Generate TypeScript types from Pydantic schemas"
+
+install:
+	@echo "📦 Installing backend dependencies..."
+	cd backend && poetry install --no-root
+	@echo "📦 Installing frontend dependencies..."
+	cd frontend && npm install
+	@echo "📦 Installing root dependencies..."
+	npm install
+	@echo "🔧 Setting up git hooks..."
+	npx husky
+
+dev:
+	@echo "🚀 Starting all services in development mode..."
+	docker-compose -f infrastructure/docker/docker-compose.dev.yml up
+
+dev-backend:
+	@echo "🚀 Starting backend..."
+	cd backend && poetry run uvicorn src.app.main:app --reload --host 0.0.0.0 --port 8000
+
+dev-frontend:
+	@echo "🚀 Starting frontend..."
+	cd frontend && npm run dev
+
+test:
+	@echo "🧪 Running all tests..."
+	@echo "Testing backend..."
+	cd backend && poetry run pytest
+	@echo "Testing frontend..."
+	cd frontend && npm test
+
+test-backend:
+	cd backend && poetry run pytest
+
+test-frontend:
+	cd frontend && npm test
+
+lint:
+	@echo "🔍 Linting all code..."
+	@echo "Linting backend..."
+	cd backend && poetry run ruff check src tests && poetry run mypy src
+	@echo "Linting frontend..."
+	cd frontend && npm run lint
+
+format:
+	@echo "✨ Formatting all code..."
+	@echo "Formatting backend..."
+	cd backend && poetry run ruff format src tests
+	@echo "Formatting frontend..."
+	cd frontend && npm run format
+
+build:
+	@echo "🏗️ Building all services..."
+	docker-compose -f infrastructure/docker/docker-compose.yml build
+
+clean:
+	@echo "🧹 Cleaning all build artifacts..."
+	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+	find . -type d -name "node_modules" -exec rm -rf {} + 2>/dev/null || true
+	find . -type d -name ".pytest_cache" -exec rm -rf {} + 2>/dev/null || true
+	find . -type d -name ".ruff_cache" -exec rm -rf {} + 2>/dev/null || true
+	find . -type d -name "dist" -exec rm -rf {} + 2>/dev/null || true
+	find . -type d -name "build" -exec rm -rf {} + 2>/dev/null || true
+	rm -rf backend/htmlcov backend/.coverage
+	rm -rf frontend/coverage
+
+docker-up:
+	docker-compose -f infrastructure/docker/docker-compose.yml up -d
+
+docker-down:
+	docker-compose -f infrastructure/docker/docker-compose.yml down
+
+docker-logs:
+	docker-compose -f infrastructure/docker/docker-compose.yml logs -f
+
+types:
+	@echo "🔄 Generating TypeScript types from Pydantic schemas..."
+	cd backend && python scripts/generate_types.py
+
+migrate:
+	cd backend && poetry run alembic upgrade head
+
+db-create:
+	cd backend && poetry run alembic revision --autogenerate -m "$(message)"
+
+# Development database commands
+db-reset:
+	docker-compose -f infrastructure/docker/docker-compose.dev.yml down -v
+	docker-compose -f infrastructure/docker/docker-compose.dev.yml up -d db
+	sleep 5
+	cd backend && poetry run alembic upgrade head
+	cd backend && poetry run python scripts/seed_db.py
