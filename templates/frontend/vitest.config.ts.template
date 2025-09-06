@@ -1,0 +1,22 @@
+import { defineConfig } from 'vitest/config'
+{{framework_imports}}
+
+export default defineConfig({
+  plugins: [{{framework_plugins}}],
+  test: {
+    include: ['src/**/*.{test,spec}.{js,ts{{file_extensions}}}'],
+    environment: 'happy-dom',
+    globals: true,
+    setupFiles: ['src/utils/test-setup.ts'],
+    coverage: {
+      reporter: ['text', 'json', 'html'],
+      exclude: [
+        'node_modules/',
+        'src/utils/test-setup.ts',
+        '**/*.d.ts',
+        '**/*.test.{js,ts{{file_extensions}}}',
+        '**/*.spec.{js,ts{{file_extensions}}}'
+      ]
+    }
+  },
+})

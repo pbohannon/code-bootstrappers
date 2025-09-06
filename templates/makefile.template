@@ -25,7 +25,13 @@ install:
 	@echo "📦 Installing root dependencies..."
 	npm install
 	@echo "🔧 Setting up git hooks..."
-	npx husky
+	@if [ -d .git ]; then \
+		echo "Git repository detected, setting up Husky hooks..."; \
+		npx husky; \
+	else \
+		echo "⚠️  No git repository found - skipping git hooks setup"; \
+		echo "   Run 'git init' and then 'npx husky' to set up hooks later"; \
+	fi
 
 dev:
 	@echo "🚀 Starting all services in development mode..."
@@ -92,7 +98,7 @@ docker-logs:
 
 types:
 	@echo "🔄 Generating TypeScript types from Pydantic schemas..."
-	cd backend && python scripts/generate_types.py
+	cd backend && poetry run python scripts/generate_types.py
 
 migrate:
 	cd backend && poetry run alembic upgrade head

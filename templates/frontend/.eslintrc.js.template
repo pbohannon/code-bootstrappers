@@ -1,0 +1,122 @@
+module.exports = {
+  root: true,
+  env: { browser: true, es2020: true{{env_additions}} },
+  extends: [
+    'eslint:recommended',
+    '@typescript-eslint/recommended',
+    'plugin:import/recommended',
+    'plugin:import/typescript',
+    'plugin:boundaries/recommended'{{framework_eslint_extends}}
+  ],{{overrides}}
+  ignorePatterns: ['dist', '.eslintrc.cjs'],
+  parser: '@typescript-eslint/parser',
+  plugins: [{{framework_eslint_plugins}}, 'import', 'boundaries'],
+  settings: {
+    'import/resolver': {
+      typescript: {
+        alwaysTryTypes: true,
+        project: './tsconfig.json',
+      },
+    },
+    'boundaries/elements': [
+      {
+        type: 'components',
+        pattern: '{{components_pattern}}',
+        mode: 'folder'
+      },
+      {
+        type: '{{pages_type}}', 
+        pattern: '{{pages_pattern}}',
+        mode: 'folder'
+      },
+      {
+        type: 'services',
+        pattern: 'src/services/*',
+        mode: 'folder'
+      },
+      {
+        type: '{{state_type}}',
+        pattern: '{{state_pattern}}', 
+        mode: 'folder'
+      }{{additional_boundary_elements}}
+    ],
+    'boundaries/ignore': ['**/*.test.{ts,js{{test_file_extensions}}}', '**/*.spec.{ts,js{{test_file_extensions}}}']
+  },
+  rules: {
+    // Prevent direct API imports in components
+    'no-restricted-imports': [
+      'error',
+      {
+        'paths': [
+          {
+            'name': 'axios',
+            'message': 'Use the ApiService from services/api.ts instead'
+          }
+        ],
+        'patterns': [
+          {
+            'group': ['**/services/api'],
+            'importNames': ['axios', 'fetch'],
+            'message': '{{restricted_import_message}}'
+          }
+        ]
+      }
+    ],
+
+    // Architectural boundaries
+    'boundaries/element-types': [
+      'error',
+      {
+        'default': 'disallow',
+        'rules': [
+          {
+            'from': ['components'],
+            'allow': ['components', '{{component_hook_type}}', 'services'],
+            'disallow': ['{{state_type}}', '{{pages_type}}']
+          },
+          {
+            'from': ['{{pages_type}}'],
+            'allow': ['components', '{{component_hook_type}}', 'services', '{{state_type}}']
+          },
+          {
+            'from': ['{{component_hook_type}}'],
+            'allow': ['services', '{{state_type}}']
+          },
+          {
+            'from': ['services'],
+            'allow': ['services']
+          },
+          {
+            'from': ['{{state_type}}'],
+            'allow': ['services']
+          }
+        ]
+      }
+    ],
+    
+    // Import organization
+    'import/order': [
+      'error',
+      {
+        'groups': [
+          'builtin',
+          'external', 
+          'internal',
+          'parent',
+          'sibling',
+          'index'
+        ],
+        'newlines-between': 'always',
+        'alphabetize': {
+          'order': 'asc',
+          'caseInsensitive': true
+        }
+      }
+    ],
+    
+    // Framework-specific rules
+{{framework_specific_rules}}
+    
+    '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }]
+  },
+}

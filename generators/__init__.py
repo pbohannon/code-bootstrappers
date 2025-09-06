@@ -11,10 +11,12 @@ from .backend import BackendGenerator
 from .infrastructure import InfrastructureGenerator
 from .react import ReactFrontendGenerator
 from .vue import VueFrontendGenerator
+from .svelte import SvelteFrontendGenerator
 
 __all__ = [
     "BackendGenerator",
-    "InfrastructureGenerator", 
+    "InfrastructureGenerator",
     "ReactFrontendGenerator",
     "VueFrontendGenerator",
+    "SvelteFrontendGenerator",
 ]

@@ -1,0 +1,21 @@
+import { defineConfig } from 'vite'
+{{framework_imports}}
+import path from 'path'
+
+export default defineConfig({
+  plugins: [{{framework_plugins}}],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),{{path_aliases}}
+    },
+  },
+  server: {
+    port: 3000,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
+    },
+  },{{build_options}}{{test_config}}
+})

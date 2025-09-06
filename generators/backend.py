@@ -45,6 +45,10 @@ class BackendGenerator:
         # Create type generation script
         if self.features.type_generation:
             self._create_type_generation_script()
+        
+        # Create basic test examples if testing is enabled
+        if self.features.testing:
+            self._create_basic_tests()
 
         print("  ✓ Backend structure created with FastAPI and Poetry")
 
@@ -95,6 +99,8 @@ build-backend = "poetry.core.masonry.api"
 target-version = "py312"
 line-length = 100
 fix = true
+
+[tool.ruff.lint]
 select = [
     "E", "W", "F",        # pycodestyle errors, warnings, pyflakes
     "UP",                 # pyupgrade  
@@ -121,7 +127,7 @@ ignore = [
     "S101"               # use of assert (ok in tests)
 ]
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 # Test files
 "tests/*" = ["S101", "ANN", "ARG", "PLR2004", "PLR0913"]
 # Migration files  
@@ -131,18 +137,18 @@ ignore = [
 # Models can have many fields
 "**/models/*" = ["PLR0913"]
 
-[tool.ruff.mccabe]
+[tool.ruff.lint.mccabe]
 max-complexity = 8
 
-[tool.ruff.pylint]
+[tool.ruff.lint.pylint]
 max-args = 6          # Force dependency injection over parameter lists
 max-locals = 15       # Reasonable limit for local vars
 max-branches = 12     # Prevent deeply nested conditionals
 
-[tool.ruff.flake8-tidy-imports]
+[tool.ruff.lint.flake8-tidy-imports]
 ban-relative-imports = "all"  # Force absolute imports
 
-[tool.ruff.isort]
+[tool.ruff.lint.isort]
 known-first-party = ["src"]
 force-single-line = true
 lines-after-imports = 2
@@ -161,6 +167,7 @@ ignore_errors = true
 minversion = "8.0"
 testpaths = ["tests"]
 asyncio_mode = "auto"
+pythonpath = ["."]
 '''
 
     def _get_env_example(self) -> str:
@@ -193,6 +200,7 @@ FastAPI application entry point configured for monorepo.
 """
 
 from contextlib import asynccontextmanager
+from collections.abc import AsyncGenerator
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -208,7 +216,7 @@ settings = get_settings()
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan manager."""
     logger.info("Starting application", environment=settings.ENVIRONMENT)
     yield
@@ -238,12 +246,9 @@ app.include_router(api_router, prefix=settings.API_V1_PREFIX)
 
 # Health check
 @app.get("/health")
-async def health_check():
+async def health_check() -> dict[str, str]:
     return {"status": "healthy", "service": "backend"}
 
-# In production, you might serve the built frontend from here
-# if (Path(__file__).parent / "static").exists():
-#     app.mount("/", StaticFiles(directory="static", html=True), name="static")
 '''
 
     def _get_readme(self) -> str:
@@ -364,20 +369,27 @@ api_router = APIRouter()
 Health check endpoints.
 """
 from fastapi import APIRouter
+from pydantic import BaseModel
 from src.app.core.config import get_settings
 
 router = APIRouter()
 settings = get_settings()
 
-@router.get("/")
-async def health_check():
+class HealthResponse(BaseModel):
+    status: str
+    service: str
+    version: str
+    environment: str
+
+@router.get("/", response_model=HealthResponse)
+async def health_check() -> HealthResponse:
     """Health check endpoint."""
-    return {
-        "status": "healthy",
-        "service": settings.PROJECT_NAME,
-        "version": settings.VERSION,
-        "environment": settings.ENVIRONMENT
-    }
+    return HealthResponse(
+        status="healthy",
+        service=settings.PROJECT_NAME,
+        version=settings.VERSION,
+        environment=settings.ENVIRONMENT
+    )
 '''
         (self.project_dir / "backend" / "src" / "app" / "api" / "v1" / "endpoints" / "health.py").write_text(health_endpoint)
 
@@ -387,19 +399,76 @@ async def health_check():
             auth_endpoint = '''"""
 Authentication endpoints.
 """
+from datetime import datetime
 from fastapi import APIRouter
+from pydantic import BaseModel, EmailStr
 
 router = APIRouter()
 
-@router.post("/login")
-async def login():
-    """Login endpoint (placeholder)."""
-    return {"message": "Login endpoint - implement authentication logic here"}
+# Request Models
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str
 
-@router.post("/logout")  
-async def logout():
+class RegisterRequest(BaseModel):
+    email: EmailStr
+    password: str
+    full_name: str
+
+# Response Models
+class UserResponse(BaseModel):
+    id: str
+    email: str
+    full_name: str
+    is_active: bool
+    created_at: datetime
+
+class LoginResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    expires_in: int
+    user: UserResponse
+
+class MessageResponse(BaseModel):
+    message: str
+    success: bool = True
+
+@router.post("/login", response_model=LoginResponse)
+async def login(credentials: LoginRequest) -> LoginResponse:
+    """Login endpoint (placeholder - implement authentication logic)."""
+    # Placeholder response - implement actual authentication logic here
+    return LoginResponse(
+        access_token="placeholder_access_token",
+        expires_in=3600,
+        user=UserResponse(
+            id="placeholder_id",
+            email=credentials.email,
+            full_name="Placeholder User",
+            is_active=True,
+            created_at=datetime.now()
+        )
+    )
+
+@router.post("/register", response_model=LoginResponse)
+async def register(user_data: RegisterRequest) -> LoginResponse:
+    """Register endpoint (placeholder - implement registration logic)."""
+    # Placeholder response - implement actual registration logic here
+    return LoginResponse(
+        access_token="placeholder_access_token",
+        expires_in=3600,
+        user=UserResponse(
+            id="placeholder_id",
+            email=user_data.email,
+            full_name=user_data.full_name,
+            is_active=True,
+            created_at=datetime.now()
+        )
+    )
+
+@router.post("/logout", response_model=MessageResponse)  
+async def logout() -> MessageResponse:
     """Logout endpoint (placeholder)."""
-    return {"message": "Logout successful"}
+    return MessageResponse(message="Logout successful")
 '''
             (self.project_dir / "backend" / "src" / "app" / "api" / "v1" / "endpoints" / "auth.py").write_text(auth_endpoint)
 
@@ -412,7 +481,7 @@ from fastapi import APIRouter
 router = APIRouter()
 
 @router.get("/me")
-async def get_current_user():
+async def get_current_user() -> dict[str, str]:
     """Get current user (placeholder)."""
     return {"message": "Get current user - implement user logic here"}
 '''
@@ -420,63 +489,128 @@ async def get_current_user():
 
     def _create_type_generation_script(self):
         """Create a type generation script."""
-        type_gen_script = '''#!/usr/bin/env python3
+        # Read the robust type generation script and modify it for embedding
+        robust_script_path = Path(__file__).parent.parent / "scripts" / "generate_types_robust.py"
+        robust_script_content = robust_script_path.read_text()
+        
+        # Remove the original main function and if __name__ == "__main__" block
+        robust_script_lines = robust_script_content.split('\n')
+        filtered_lines = []
+        skip_lines = False
+        
+        for line in robust_script_lines:
+            if line.strip().startswith('def main():'):
+                skip_lines = True
+                continue
+            elif line.strip().startswith('if __name__ == "__main__":'):
+                skip_lines = True
+                continue
+            elif skip_lines and line.strip() == '':
+                continue
+            elif skip_lines and not line.startswith('    ') and not line.startswith('\t') and line.strip():
+                skip_lines = False
+                filtered_lines.append(line)
+            elif not skip_lines:
+                filtered_lines.append(line)
+        
+        robust_script_clean = '\n'.join(filtered_lines).rstrip()
+        
+        # Create a wrapper script that calls our robust generator
+        type_gen_script = f'''#!/usr/bin/env python3
 """
 Generate TypeScript types from Pydantic schemas.
-This script should be run from the backend directory.
+This script uses a robust custom solution that handles edge cases gracefully.
 """
 
-import subprocess
+import sys
 from pathlib import Path
 
+# Embedded robust type generator
+{robust_script_clean}
 
-def generate_types():
-    """Generate TypeScript types from Pydantic schemas."""
+def main():
+    """Main wrapper that calls the robust generator with correct paths."""
     schemas_path = Path("src/app/schemas")
     output_path = Path("../frontend/src/types/api.generated.ts")
-
-    # Ensure output directory exists
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-
-    # Run pydantic2ts
-    cmd = [
-        "pydantic2ts",
-        "--module", str(schemas_path).replace("/", "."),
-        "--output", str(output_path),
-        "--json2ts-cmd", "npx json2ts"
-    ]
-
-    print(f"Generating TypeScript types from {schemas_path} to {output_path}")
-
-    try:
-        subprocess.run(cmd, check=True)
-        print("✅ Types generated successfully!")
-
-        # Add a header to the generated file
-        content = output_path.read_text()
-        header = """/* eslint-disable */
-/* tslint:disable */
-/**
- * AUTO-GENERATED FILE - DO NOT EDIT
- * This file is automatically generated from Pydantic schemas.
- * Run 'make types' from the root to regenerate.
- */
-
-"""
-        output_path.write_text(header + content)
-
-    except subprocess.CalledProcessError as e:
-        print(f"❌ Error generating types: {e}")
-        return 1
-
-    return 0
-
+    
+    print(f"🔄 Generating TypeScript types...")
+    print(f"   Schemas: {{schemas_path}}")
+    print(f"   Output:  {{output_path}}")
+    
+    success = generate_typescript_types(schemas_path, output_path)
+    return 0 if success else 1
 
 if __name__ == "__main__":
-    exit(generate_types())
+    sys.exit(main())
 '''
 
         script_path = self.project_dir / "backend" / "scripts" / "generate_types.py"
         script_path.parent.mkdir(parents=True, exist_ok=True)
         script_path.write_text(type_gen_script)
         script_path.chmod(0o755)
+    
+    def _create_basic_tests(self):
+        """Create basic test examples to get developers started."""
+        # Test health endpoint
+        health_test = '''"""
+Test health check endpoint.
+"""
+import pytest
+from httpx import AsyncClient
+from src.app.main import app
+
+
+@pytest.mark.asyncio
+async def test_health_endpoint():
+    """Test that health endpoint returns correct response."""
+    async with AsyncClient(app=app, base_url="http://test") as client:
+        response = await client.get("/health")
+        
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "healthy"
+    assert data["service"] == "backend"
+'''
+        (self.project_dir / "backend" / "tests" / "unit" / "test_health.py").write_text(health_test)
+        
+        # Test API v1 health endpoint if testing is enabled
+        if self.features.testing:
+            api_health_test = '''"""
+Test API v1 health endpoint.
+"""
+import pytest
+from httpx import AsyncClient
+from src.app.main import app
+
+
+@pytest.mark.asyncio
+async def test_api_health_endpoint():
+    """Test that API health endpoint returns correct response."""
+    async with AsyncClient(app=app, base_url="http://test") as client:
+        response = await client.get("/api/v1/health/")
+        
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "healthy"
+    assert "service" in data
+    assert "version" in data
+    assert "environment" in data
+'''
+            (self.project_dir / "backend" / "tests" / "unit" / "test_api_health.py").write_text(api_health_test)
+        
+        # Basic conftest.py for pytest configuration
+        conftest_content = '''"""
+Pytest configuration and fixtures.
+"""
+import pytest
+from httpx import AsyncClient
+from src.app.main import app
+
+
+@pytest.fixture
+async def client():
+    """Create test client."""
+    async with AsyncClient(app=app, base_url="http://test") as client:
+        yield client
+'''
+        (self.project_dir / "backend" / "tests" / "conftest.py").write_text(conftest_content)

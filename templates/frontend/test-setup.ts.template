@@ -1,0 +1,45 @@
+import '@testing-library/jest-dom'
+import { vi } from 'vitest'
+
+// Mock environment variables
+vi.stubEnv('VITE_API_URL', 'http://localhost:8000/api/v1')
+vi.stubEnv('VITE_APP_NAME', 'Test App')
+
+// Mock localStorage
+Object.defineProperty(window, 'localStorage', {
+  value: {
+    getItem: vi.fn(),
+    setItem: vi.fn(),
+    removeItem: vi.fn(),
+    clear: vi.fn(),
+  },
+  writable: true,
+})
+
+// Mock crypto.randomUUID for environments that don't support it
+if (!globalThis.crypto?.randomUUID) {
+  Object.defineProperty(globalThis, 'crypto', {
+    value: {
+      randomUUID: () => `test-uuid-${Math.random().toString(36).substring(7)}`
+    }
+  })
+}
+
+// Setup global test utilities
+(globalThis as any).testUtils = {
+  waitFor: (callback: () => boolean, timeout = 1000) => {
+    return new Promise<void>((resolve, reject) => {
+      const startTime = Date.now()
+      const check = () => {
+        if (callback()) {
+          resolve()
+        } else if (Date.now() - startTime > timeout) {
+          reject(new Error('Timeout waiting for condition'))
+        } else {
+          setTimeout(check, 50)
+        }
+      }
+      check()
+    })
+  }
+}

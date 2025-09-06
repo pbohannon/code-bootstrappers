@@ -1,181 +1,111 @@
-"""
-React frontend generator for monorepo bootstrap.
-"""
+"""React frontend generator for monorepo bootstrap."""
 
-import json
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, List
+
+from .base_frontend import BaseFrontendGenerator
 
 
-class ReactFrontendGenerator:
-    def __init__(self, project_name: str, project_dir: Path, features):
-        self.project_name = project_name
-        self.project_dir = project_dir
-        self.features = features
-
-    def create_structure(self):
-        """Create React frontend structure with TypeScript."""
-        print("  🎨 Creating React frontend structure...")
-
-        # Create package.json for React
-        package_json = self._get_package_json()
-        (self.project_dir / "frontend" / "package.json").write_text(
-            json.dumps(package_json, indent=2)
-        )
-
-        # TypeScript config
-        tsconfig = self._get_tsconfig()
-        (self.project_dir / "frontend" / "tsconfig.json").write_text(
-            json.dumps(tsconfig, indent=2)
-        )
-
-        # Vite config
-        vite_config = self._get_vite_config()
-        (self.project_dir / "frontend" / "vite.config.ts").write_text(vite_config)
-
-        # ESLint config with architectural boundaries
-        eslint_config = self._get_eslint_config()
-        (self.project_dir / "frontend" / ".eslintrc.js").write_text(eslint_config)
-
-        # API service
-        api_service = self._get_api_service()
-        (self.project_dir / "frontend" / "src" / "services" / "api.ts").write_text(api_service)
-
-        # Basic App component
-        app_component = self._get_app_component()
-        (self.project_dir / "frontend" / "src" / "App.tsx").write_text(app_component)
-
-        # Frontend .env.example
-        frontend_env = self._get_env_example()
-        (self.project_dir / "frontend" / ".env.example").write_text(frontend_env)
-
-        print("  ✓ React frontend structure created with TypeScript, Vite, and TanStack Query")
-
-    def _get_package_json(self) -> Dict[str, Any]:
+class ReactFrontendGenerator(BaseFrontendGenerator):
+    # Implement abstract methods from BaseFrontendGenerator
+    
+    def get_framework_name(self) -> str:
+        """Return the name of the framework."""
+        return "React"
+    
+    def get_framework_directories(self) -> List[str]:
+        """Return React-specific directory paths to create."""
+        return [
+            "frontend/src/components",
+            "frontend/src/pages", 
+            "frontend/src/hooks",
+            "frontend/src/stores"
+        ]
+    
+    def get_framework_dependencies(self) -> Dict[str, str]:
+        """Return React-specific runtime dependencies."""
         return {
-            "name": f"{self.project_name}-frontend",
-            "version": "0.1.0",
-            "private": True,
-            "scripts": {
-                "dev": "vite",
-                "build": "tsc && vite build",
-                "preview": "vite preview",
-                "test": "vitest",
-                "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-                "format": "prettier --write 'src/**/*.{ts,tsx,css}'",
-                "type-check": "tsc --noEmit"
-            },
-            "dependencies": {
-                "react": "^18.2.0",
-                "react-dom": "^18.2.0",
-                "react-router-dom": "^6.20.0",
-                "@tanstack/react-query": "^5.0.0",
-                "axios": "^1.6.0",
-                "zustand": "^4.4.0",
-                "react-hook-form": "^7.48.0",
-                "zod": "^3.22.0"
-            },
-            "devDependencies": {
-                "@types/react": "^18.2.0",
-                "@types/react-dom": "^18.2.0",
-                "@typescript-eslint/eslint-plugin": "^6.0.0",
-                "@typescript-eslint/parser": "^6.0.0",
-                "@vitejs/plugin-react": "^4.2.0",
-                "eslint": "^8.50.0",
-                "eslint-plugin-react-hooks": "^4.6.0",
-                "eslint-plugin-react-refresh": "^0.4.0",
-                "eslint-plugin-import": "^2.29.0",
-                "eslint-plugin-boundaries": "^4.0.0",
-                "prettier": "^3.1.0",
-                "typescript": "^5.3.0",
-                "vite": "^5.0.0",
-                "vitest": "^1.0.0",
-                "@testing-library/react": "^14.0.0",
-                "@testing-library/jest-dom": "^6.1.0",
-                "@testing-library/user-event": "^14.5.0"
-            }
+            "react": "^18.2.0",
+            "react-dom": "^18.2.0",
+            "react-router-dom": "^6.20.0",
+            "@tanstack/react-query": "^5.0.0",
+            "zustand": "^4.4.0",
+            "react-hook-form": "^7.48.0"
         }
-
-    def _get_tsconfig(self) -> Dict[str, Any]:
+    
+    def get_framework_dev_dependencies(self) -> Dict[str, str]:
+        """Return React-specific development dependencies."""
         return {
-            "compilerOptions": {
-                "target": "ES2020",
-                "useDefineForClassFields": True,
-                "lib": ["ES2020", "DOM", "DOM.Iterable"],
-                "module": "ESNext",
-                "skipLibCheck": True,
-                "moduleResolution": "bundler",
-                "allowImportingTsExtensions": True,
-                "resolveJsonModule": True,
-                "isolatedModules": True,
-                "noEmit": True,
-                "jsx": "react-jsx",
-                "strict": True,
-                "noUnusedLocals": True,
-                "noUnusedParameters": True,
-                "noFallthroughCasesInSwitch": True,
-                "baseUrl": ".",
-                "paths": {
-                    "@/*": ["src/*"],
-                    "@/types/*": ["src/types/*"],
-                    "@/services/*": ["src/services/*"],
-                    "@/components/*": ["src/components/*"],
-                    "@/hooks/*": ["src/hooks/*"],
-                    "@/utils/*": ["src/utils/*"]
-                }
-            },
-            "include": ["src"],
-            "references": [{"path": "./tsconfig.node.json"}]
+            "@types/react": "^18.2.0",
+            "@types/react-dom": "^18.2.0",
+            "@vitejs/plugin-react": "^4.2.0"
         }
-
-    def _get_vite_config(self) -> str:
-        return '''import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import path from 'path'
-
-export default defineConfig({
-  plugins: [react()],
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-    },
-  },
-  server: {
-    port: 3000,
-    proxy: {
-      '/api': {
-        target: 'http://localhost:8000',
-        changeOrigin: true,
-      },
-    },
-  },
-})
-'''
-
-    def _get_eslint_config(self) -> str:
-        return '''module.exports = {
-  root: true,
-  env: { browser: true, es2020: true },
-  extends: [
-    'eslint:recommended',
-    '@typescript-eslint/recommended',
-    'plugin:react-hooks/recommended',
-    'plugin:import/recommended',
-    'plugin:import/typescript',
-    'plugin:boundaries/recommended'
-  ],
-  ignorePatterns: ['dist', '.eslintrc.cjs'],
-  parser: '@typescript-eslint/parser',
-  plugins: ['react-refresh', 'import', 'boundaries'],
-  settings: {
-    'import/resolver': {
-      typescript: {
-        alwaysTryTypes: true,
-        project: './tsconfig.json',
-      },
-    },
-    'boundaries/elements': [
-      {
+    
+    def get_framework_test_dependencies(self) -> Dict[str, str]:
+        """Return React-specific test dependencies."""
+        return {
+            "@testing-library/react": "^14.0.0"
+        }
+    
+    def get_framework_lint_dependencies(self) -> Dict[str, str]:
+        """Return React-specific linting dependencies."""
+        return {
+            "eslint-plugin-react-hooks": "^4.6.0",
+            "eslint-plugin-react-refresh": "^0.4.0"
+        }
+    
+    def get_framework_scripts(self) -> Dict[str, str]:
+        """Return React-specific npm scripts."""
+        return {
+            "build": "tsc && vite build",
+            "type-check": "tsc --noEmit"
+        }
+    
+    def get_vite_plugin_import(self) -> str:
+        """Return the import statement for React's Vite plugin."""
+        return "import react from '@vitejs/plugin-react'"
+    
+    def get_vite_plugin_usage(self) -> str:
+        """Return the usage of React's Vite plugin."""
+        return "react()"
+    
+    def customize_tsconfig(self, config: Dict[str, Any]) -> None:
+        """Customize TypeScript configuration for React."""
+        # Add React-specific compiler options
+        config["compilerOptions"].update({
+            "useDefineForClassFields": True,
+            "jsx": "react-jsx"
+        })
+        
+        # Add React-specific path mappings
+        config["compilerOptions"]["paths"].update({
+            "@/components/*": ["src/components/*"],
+            "@/hooks/*": ["src/hooks/*"],
+            "@/stores/*": ["src/stores/*"],
+            "@/pages/*": ["src/pages/*"]
+        })
+        
+        # Add references for node config
+        config["references"] = [{"path": "./tsconfig.node.json"}]
+    
+    def get_eslint_framework_extends(self) -> str:
+        """Return React-specific ESLint extends configuration."""
+        return "\n    'plugin:react-hooks/recommended',"
+    
+    def get_eslint_framework_plugins(self) -> str:
+        """Return React-specific ESLint plugins."""
+        return ", 'react-refresh'"
+    
+    def get_eslint_framework_rules(self) -> str:
+        """Return React-specific ESLint rules."""
+        return '''\n    'react-refresh/only-export-components': [
+      'warn',
+      { allowConstantExport: true },
+    ],'''
+    
+    def get_eslint_boundary_patterns(self) -> str:
+        """Return React-specific boundary patterns for ESLint."""
+        return '''\n      {
         type: 'components',
         pattern: 'src/components/*',
         mode: 'folder'
@@ -199,162 +129,46 @@ export default defineConfig({
         type: 'hooks',
         pattern: 'src/hooks/*',
         mode: 'folder'
-      }
-    ],
-    'boundaries/ignore': ['**/*.test.{ts,tsx}', '**/*.spec.{ts,tsx}']
-  },
-  rules: {
-    'react-refresh/only-export-components': [
-      'warn',
-      { allowConstantExport: true },
-    ],
+      }'''
     
-    // Prevent direct API imports in components
-    'no-restricted-imports': [
-      'error',
-      {
-        'paths': [
-          {
-            'name': 'axios',
-            'message': 'Use the ApiService from services/api.ts instead'
-          }
-        ],
-        'patterns': [
-          {
-            'group': ['**/services/api'],
-            'importNames': ['axios', 'fetch'],
-            'message': 'Components should use hooks or higher-level services for API calls'
-          }
-        ]
-      }
-    ],
-
-    // Architectural boundaries
-    'boundaries/element-types': [
-      'error',
-      {
-        'default': 'disallow',
-        'rules': [
-          {
-            'from': ['components'],
-            'allow': ['components', 'hooks', 'services'],
-            'disallow': ['stores', 'pages']
-          },
-          {
-            'from': ['pages'],
-            'allow': ['components', 'hooks', 'services', 'stores']
-          },
-          {
-            'from': ['hooks'],
-            'allow': ['services', 'stores']
-          },
-          {
-            'from': ['services'],
-            'allow': ['services']
-          },
-          {
-            'from': ['stores'],
-            'allow': ['services']
-          }
-        ]
-      }
-    ],
+    def get_lint_command(self) -> str:
+        """Return the lint command for React."""
+        return "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
     
-    // Import organization
-    'import/order': [
-      'error',
-      {
-        'groups': [
-          'builtin',
-          'external', 
-          'internal',
-          'parent',
-          'sibling',
-          'index'
-        ],
-        'newlines-between': 'always',
-        'alphabetize': {
-          'order': 'asc',
-          'caseInsensitive': true
-        }
-      }
-    ],
+    def get_lint_fix_command(self) -> str:
+        """Return the lint fix command for React."""
+        return "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0 --fix"
     
-    // Prevent prop drilling indicators
-    'react/prop-types': 'off', // We use TypeScript
-    '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }]
-  },
-}
-'''
-
-    def _get_api_service(self) -> str:
-        return '''import axios from 'axios';
-import type { AxiosInstance, AxiosRequestConfig } from 'axios';
-
-class ApiService {
-  private client: AxiosInstance;
-
-  constructor() {
-    this.client = axios.create({
-      baseURL: import.meta.env.VITE_API_URL || '/api/v1',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    // Request interceptor for auth
-    this.client.interceptors.request.use(
-      (config) => {
-        const token = localStorage.getItem('access_token');
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`;
+    def get_test_file_extensions(self) -> str:
+        """Return React-specific test file extensions."""
+        return ",tsx"
+    
+    def create_framework_configs(self) -> None:
+        """Create React-specific configuration files."""
+        # Create tsconfig.node.json for Vite
+        tsconfig_node = {
+            "compilerOptions": {
+                "composite": True,
+                "skipLibCheck": True,
+                "module": "ESNext",
+                "moduleResolution": "bundler",
+                "allowSyntheticDefaultImports": True
+            },
+            "include": ["vite.config.ts"]
         }
-        return config;
-      },
-      (error) => Promise.reject(error)
-    );
-
-    // Response interceptor for error handling
-    this.client.interceptors.response.use(
-      (response) => response,
-      async (error) => {
-        if (error.response?.status === 401) {
-          // Handle token refresh or redirect to login
-          localStorage.removeItem('access_token');
-          window.location.href = '/login';
-        }
-        return Promise.reject(error);
-      }
-    );
-  }
-
-  async get<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
-    const response = await this.client.get<T>(url, config);
-    return response.data;
-  }
-
-  async post<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
-    const response = await this.client.post<T>(url, data, config);
-    return response.data;
-  }
-
-  async put<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
-    const response = await this.client.put<T>(url, data, config);
-    return response.data;
-  }
-
-  async delete<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
-    const response = await this.client.delete<T>(url, config);
-    return response.data;
-  }
-}
-
-export const apiService = new ApiService();
-'''
-
-    def _get_app_component(self) -> str:
-        return f'''import {{ QueryClient, QueryClientProvider }} from '@tanstack/react-query';
-import {{ BrowserRouter }} from 'react-router-dom';
+        
+        import json
+        (self.frontend_dir / "tsconfig.node.json").write_text(
+            json.dumps(tsconfig_node, indent=2)
+        )
+    
+    def create_framework_routes(self) -> None:
+        """Create React-specific routing setup."""
+        # Create main App component with React Router
+        app_component = f'''import {{ QueryClient, QueryClientProvider }} from '@tanstack/react-query';
+import {{ BrowserRouter, Routes, Route }} from 'react-router-dom';
+import HomePage from './pages/HomePage';
+import LoginPage from './pages/LoginPage';
 
 const queryClient = new QueryClient({{
   defaultOptions: {{
@@ -369,9 +183,11 @@ function App() {{
   return (
     <QueryClientProvider client={{queryClient}}>
       <BrowserRouter>
-        <div className="App">
-          <h1>Welcome to {self.project_name}</h1>
-          <p>Frontend is connected to the backend API</p>
+        <div className="min-h-screen bg-gray-50">
+          <Routes>
+            <Route path="/" element={{<HomePage />}} />
+            <Route path="/login" element={{<LoginPage />}} />
+          </Routes>
         </div>
       </BrowserRouter>
     </QueryClientProvider>
@@ -380,9 +196,279 @@ function App() {{
 
 export default App;
 '''
+        (self.frontend_dir / "src" / "App.tsx").write_text(app_component)
+        
+        # Create main.tsx entry point
+        main_tsx = '''import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App';
+import './index.css';
 
-    def _get_env_example(self) -> str:
-        return '''# Frontend Environment Variables
-VITE_API_URL=http://localhost:8000/api/v1
-VITE_APP_NAME=Monorepo Frontend
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>,
+);
 '''
+        (self.frontend_dir / "src" / "main.tsx").write_text(main_tsx)
+        
+        # Create basic CSS
+        index_css = '''@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: light dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #242424;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+}
+
+a {
+  font-weight: 500;
+  color: #646cff;
+  text-decoration: inherit;
+}
+a:hover {
+  color: #535bf2;
+}
+
+body {
+  margin: 0;
+  display: flex;
+  place-items: center;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+h1 {
+  font-size: 3.2em;
+  line-height: 1.1;
+}
+
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
+}
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+.logo.react:hover {
+  filter: drop-shadow(0 0 2em #61dafbaa);
+}
+
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
+}
+
+.card {
+  padding: 2em;
+}
+
+.read-the-docs {
+  color: #888;
+}
+'''
+        (self.frontend_dir / "src" / "index.css").write_text(index_css)
+    
+    def create_framework_components(self) -> None:
+        """Create React-specific starter components."""
+        # Create HomePage component
+        home_page = f'''import React from 'react';
+import {{ Link }} from 'react-router-dom';
+
+const HomePage: React.FC = () => {{
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-4xl font-bold text-center mb-8">
+        Welcome to {self.project_name.replace('_', ' ').title()}
+      </h1>
+      <div className="max-w-2xl mx-auto text-center">
+        <p className="text-lg text-gray-600 mb-8">
+          Your React frontend is connected to the FastAPI backend.
+        </p>
+        <div className="space-x-4">
+          <Link 
+            to="/login" 
+            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+          >
+            Login
+          </Link>
+          <a 
+            href="/api/v1/docs" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+          >
+            API Docs
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}};
+
+export default HomePage;
+'''
+        (self.frontend_dir / "src" / "pages" / "HomePage.tsx").write_text(home_page)
+        
+        # Create LoginPage component
+        login_page = '''import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { apiService } from '@/services/api';
+
+const LoginPage: React.FC = () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await apiService.post<{ access_token: string }>('/auth/login', {
+        email,
+        password,
+      });
+      
+      localStorage.setItem('access_token', response.access_token);
+      navigate('/');
+    } catch (err) {
+      setError('Invalid credentials');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8">
+        <div>
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+            Sign in to your account
+          </h2>
+        </div>
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+          <div className="rounded-md shadow-sm -space-y-px">
+            <div>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="relative block w-full px-3 py-2 border border-gray-300 rounded-t-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                placeholder="Email address"
+              />
+            </div>
+            <div>
+              <input
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="relative block w-full px-3 py-2 border border-gray-300 rounded-b-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                placeholder="Password"
+              />
+            </div>
+          </div>
+
+          {error && (
+            <div className="text-red-600 text-sm text-center">{error}</div>
+          )}
+
+          <div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+            >
+              {loading ? 'Signing in...' : 'Sign in'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default LoginPage;
+'''
+        (self.frontend_dir / "src" / "pages" / "LoginPage.tsx").write_text(login_page)
+        
+        # Create a basic layout component
+        layout_component = '''import React from 'react';
+
+interface LayoutProps {
+  children: React.ReactNode;
+}
+
+const Layout: React.FC<LayoutProps> = ({ children }) => {
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <header className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-16">
+            <div className="flex items-center">
+              <h1 className="text-xl font-semibold">App</h1>
+            </div>
+          </div>
+        </div>
+      </header>
+      <main>{children}</main>
+    </div>
+  );
+};
+
+export default Layout;
+'''
+        (self.frontend_dir / "src" / "components" / "Layout.tsx").write_text(layout_component)
+        
+        # Create index.html
+        index_html = f'''<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{self.project_name.replace('_', ' ').title()}</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+'''
+        (self.frontend_dir / "public" / "index.html").write_text(index_html)
