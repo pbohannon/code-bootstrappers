@@ -216,77 +216,6 @@ export interface ApiRequestConfig {
 '''
         (self.frontend_dir / "src" / "lib" / "types" / "api.ts").write_text(api_types)
         
-        auth_types = '''// Authentication related types
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-  avatar?: string;
-  role: UserRole;
-  permissions: Permission[];
-  created_at: string;
-  updated_at: string;
-}
-
-export interface UserProfile extends User {
-  bio?: string;
-  location?: string;
-  website?: string;
-  preferences: UserPreferences;
-}
-
-export interface UserPreferences {
-  theme: 'light' | 'dark';
-  language: string;
-  notifications: NotificationSettings;
-}
-
-export interface NotificationSettings {
-  email: boolean;
-  push: boolean;
-  sms: boolean;
-  marketing: boolean;
-}
-
-export type UserRole = 'admin' | 'moderator' | 'user' | 'guest';
-
-export interface Permission {
-  id: string;
-  name: string;
-  resource: string;
-  action: string;
-}
-
-export interface LoginCredentials {
-  email: string;
-  password: string;
-  rememberMe?: boolean;
-}
-
-export interface RegisterData {
-  name: string;
-  email: string;
-  password: string;
-  confirmPassword: string;
-}
-
-export interface AuthState {
-  user: User | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  error: string | null;
-}
-
-export interface AuthTokens {
-  accessToken: string;
-  refreshToken: string;
-  expiresIn: number;
-}
-
-// Re-export CreateUser from schemas for backward compatibility
-export type { CreateUser } from '$lib/schemas/user';
-'''
-        (self.frontend_dir / "src" / "lib" / "types" / "auth.ts").write_text(auth_types)
         
         ui_types = '''// UI component related types
 export interface ComponentProps {
@@ -725,51 +654,6 @@ export const HTTP_STATUS = {
 '''
         (self.frontend_dir / "src" / "lib" / "config" / "api.ts").write_text(api_config)
         
-        auth_config = '''// Authentication configuration
-export const AUTH_CONFIG = {
-  tokenKey: 'auth_token',
-  refreshTokenKey: 'refresh_token',
-  userKey: 'auth_user',
-  tokenExpiration: 24 * 60 * 60 * 1000, // 24 hours
-  refreshThreshold: 5 * 60 * 1000, // 5 minutes before expiration
-  loginRedirect: '/dashboard',
-  logoutRedirect: '/login',
-  unauthorizedRedirect: '/login'
-} as const;
-
-export const PROTECTED_ROUTES = [
-  '/dashboard',
-  '/profile',
-  '/settings',
-  '/admin'
-] as const;
-
-export const PUBLIC_ROUTES = [
-  '/',
-  '/login',
-  '/register',
-  '/forgot-password',
-  '/reset-password',
-  '/about',
-  '/contact'
-] as const;
-
-export const ROLES = {
-  ADMIN: 'admin',
-  MODERATOR: 'moderator',
-  USER: 'user',
-  GUEST: 'guest'
-} as const;
-
-export const PERMISSIONS = {
-  USER_READ: 'user:read',
-  USER_WRITE: 'user:write',
-  USER_DELETE: 'user:delete',
-  ADMIN_ACCESS: 'admin:access',
-  MODERATOR_ACCESS: 'moderator:access'
-} as const;
-'''
-        (self.frontend_dir / "src" / "lib" / "config" / "auth.ts").write_text(auth_config)
         
         database_config = f'''// Database configuration
 export const DATABASE_CONFIG = {{

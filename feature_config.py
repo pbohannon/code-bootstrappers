@@ -25,7 +25,6 @@ class FeatureConfig:
 
     # Code generation & tooling features
     type_generation: bool = True
-    authentication: bool = True
     minimal_tooling: bool = False
 
     @classmethod
@@ -46,7 +45,6 @@ class FeatureConfig:
 
             # Code generation & tooling
             type_generation=not getattr(args, 'no_type_gen', False),
-            authentication=not getattr(args, 'no_auth', False),
             minimal_tooling=getattr(args, 'minimal_tooling', False),
         )
 
@@ -78,13 +76,6 @@ class FeatureConfig:
                 "celery>=5.4.0,<6.0.0",
             ])
 
-        if self.authentication:
-            deps.extend([
-                "python-jose[cryptography]>=3.3.0,<4.0.0",
-                "passlib[bcrypt]>=1.7.4,<2.0.0",
-                "python-multipart>=0.0.12,<0.1.0",
-                "email-validator>=2.2.0,<3.0.0",
-            ])
 
         # Always include Sentry for error tracking (can be disabled via env)
         deps.append("sentry-sdk>=2.14.0,<3.0.0")
@@ -322,7 +313,6 @@ class FeatureConfig:
             ("Testing", self.testing),
             ("VSCode Config", self.vscode),
             ("Type Generation", self.type_generation),
-            ("Authentication", self.authentication),
         ]
 
         enabled = [name for name, enabled in features if enabled]

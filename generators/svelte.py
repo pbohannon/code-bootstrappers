@@ -8,7 +8,6 @@ from typing import Dict, Any, List
 
 from .base_frontend import BaseFrontendGenerator
 from .svelte_components import SvelteComponentsGenerator
-from .svelte_stores_composables import SvelteStoresComposablesGenerator
 from .svelte_forms import SvelteFormsGenerator
 from .svelte_layouts import SvelteLayoutsGenerator
 from .svelte_actions_utils import SvelteActionsUtilsGenerator
@@ -37,10 +36,8 @@ class SvelteFrontendGenerator(BaseFrontendGenerator):
             "frontend/src/lib/components/layout/Footer",
             "frontend/src/lib/components/forms",
             "frontend/src/lib/components/forms/UserForm",
-            "frontend/src/lib/components/forms/LoginForm",
             "frontend/src/lib/components/forms/ContactForm",
             "frontend/src/lib/components/features",
-            "frontend/src/lib/components/features/auth",
             "frontend/src/lib/components/features/dashboard",
             "frontend/src/lib/components/features/profile",
             "frontend/src/lib/stores",
@@ -53,8 +50,6 @@ class SvelteFrontendGenerator(BaseFrontendGenerator):
             "frontend/src/routes",
             "frontend/src/routes/(app)",
             "frontend/src/routes/(app)/dashboard",
-            "frontend/src/routes/(auth)",
-            "frontend/src/routes/(auth)/login",
             "frontend/src/routes/(marketing)",
             "frontend/src/routes/about",
             "frontend/src/routes/contact",
@@ -692,9 +687,8 @@ button {
         layouts_generator = SvelteLayoutsGenerator(self.frontend_dir, self.project_name)
         layouts_generator.create_layout_components()
         
-        # Create stores and composables using dedicated generator
-        stores_composables_generator = SvelteStoresComposablesGenerator(self.frontend_dir, self.project_name)
-        stores_composables_generator.create_stores_and_composables()
+        # Create basic directories for future stores and composables
+        # Auth stores/composables removed for clean slate approach
         
         # Create actions, utilities, types, schemas, config, and params using dedicated generator
         actions_utils_generator = SvelteActionsUtilsGenerator(self.frontend_dir, self.project_name)

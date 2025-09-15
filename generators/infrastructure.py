@@ -48,6 +48,14 @@ class InfrastructureGenerator:
         settings = self._get_vscode_settings()
         (self.project_dir / ".vscode" / "settings.json").write_text(json.dumps(settings, indent=2))
 
+        # VSCode launch.json for debugging
+        launch_config = self._get_launch_config()
+        (self.project_dir / ".vscode" / "launch.json").write_text(json.dumps(launch_config, indent=2))
+
+        # VSCode tasks.json for common development tasks
+        tasks_config = self._get_tasks_config()
+        (self.project_dir / ".vscode" / "tasks.json").write_text(json.dumps(tasks_config, indent=2))
+
         print("  ✓ VSCode workspace settings created")
 
     def create_github_workflows(self):
@@ -302,7 +310,7 @@ CMD ["npm", "run", "dev"]
             "editor.codeActionsOnSave": {
                 "source.fixAll.eslint": "explicit"
             },
-            "python.defaultInterpreterPath": "./backend/.venv/bin/python",
+            "python.defaultInterpreterPath": "./venv/bin/python",
             "typescript.tsdk": "./frontend/node_modules/typescript/lib",
             "typescript.enablePromptUseWorkspaceTsdk": True
         }
@@ -382,7 +390,7 @@ jobs:
       - name: Cache dependencies
         uses: actions/cache@v4
         with:
-          path: backend/.venv
+          path: venv
           key: venv-${{ runner.os }}-py3.12-${{ hashFiles('backend/poetry.lock') }}
 
       - name: Install dependencies
@@ -454,3 +462,327 @@ jobs:
         run: |
           docker build -t ${{ github.repository }}-frontend:${{ github.sha }} ./frontend
 '''
+
+    def _get_launch_config(self) -> Dict[str, Any]:
+        """Generate VSCode launch.json configuration for FastAPI debugging."""
+        return {
+            "version": "0.2.0",
+            "configurations": [
+                {
+                    "name": "FastAPI Debug",
+                    "type": "python",
+                    "request": "launch",
+                    "program": "${workspaceFolder}/venv/bin/uvicorn",
+                    "args": [
+                        "src.app.main:app",
+                        "--reload",
+                        "--host",
+                        "0.0.0.0",
+                        "--port",
+                        "8000"
+                    ],
+                    "cwd": "${workspaceFolder}/backend",
+                    "env": {
+                        "PYTHONPATH": "${workspaceFolder}/backend/src"
+                    },
+                    "console": "integratedTerminal",
+                    "justMyCode": False,
+                    "python": "${workspaceFolder}/venv/bin/python"
+                },
+                {
+                    "name": "FastAPI Debug (Production Mode)",
+                    "type": "python",
+                    "request": "launch",
+                    "program": "${workspaceFolder}/venv/bin/uvicorn",
+                    "args": [
+                        "src.app.main:app",
+                        "--host",
+                        "0.0.0.0",
+                        "--port",
+                        "8000"
+                    ],
+                    "cwd": "${workspaceFolder}/backend",
+                    "env": {
+                        "PYTHONPATH": "${workspaceFolder}/backend/src",
+                        "ENVIRONMENT": "production"
+                    },
+                    "console": "integratedTerminal",
+                    "justMyCode": False,
+                    "python": "${workspaceFolder}/venv/bin/python"
+                },
+                {
+                    "name": "Python: Current File",
+                    "type": "python",
+                    "request": "launch",
+                    "program": "${file}",
+                    "console": "integratedTerminal",
+                    "justMyCode": False,
+                    "python": "${workspaceFolder}/venv/bin/python"
+                },
+                {
+                    "name": "Python: Backend Tests",
+                    "type": "python",
+                    "request": "launch",
+                    "module": "pytest",
+                    "args": [
+                        "-v",
+                        "--tb=short"
+                    ],
+                    "cwd": "${workspaceFolder}/backend",
+                    "env": {
+                        "PYTHONPATH": "${workspaceFolder}/backend/src"
+                    },
+                    "console": "integratedTerminal",
+                    "justMyCode": False,
+                    "python": "${workspaceFolder}/venv/bin/python"
+                }
+            ]
+        }
+
+    def _get_tasks_config(self) -> Dict[str, Any]:
+        """Generate VSCode tasks.json configuration for common development tasks."""
+        return {
+            "version": "2.0.0",
+            "tasks": [
+                {
+                    "label": "Install All Dependencies",
+                    "type": "shell",
+                    "command": "make",
+                    "args": ["install"],
+                    "group": "build",
+                    "presentation": {
+                        "echo": True,
+                        "reveal": "always",
+                        "focus": False,
+                        "panel": "shared",
+                        "showReuseMessage": True,
+                        "clear": False
+                    },
+                    "problemMatcher": []
+                },
+                {
+                    "label": "Start Development Server",
+                    "type": "shell",
+                    "command": "make",
+                    "args": ["dev"],
+                    "group": "build",
+                    "presentation": {
+                        "echo": True,
+                        "reveal": "always",
+                        "focus": False,
+                        "panel": "shared",
+                        "showReuseMessage": True,
+                        "clear": False
+                    },
+                    "problemMatcher": []
+                },
+                {
+                    "label": "Start Backend Only",
+                    "type": "shell",
+                    "command": "make",
+                    "args": ["dev-backend"],
+                    "group": "build",
+                    "presentation": {
+                        "echo": True,
+                        "reveal": "always",
+                        "focus": False,
+                        "panel": "shared",
+                        "showReuseMessage": True,
+                        "clear": False
+                    },
+                    "problemMatcher": []
+                },
+                {
+                    "label": "Start Frontend Only",
+                    "type": "shell",
+                    "command": "make",
+                    "args": ["dev-frontend"],
+                    "group": "build",
+                    "presentation": {
+                        "echo": True,
+                        "reveal": "always",
+                        "focus": False,
+                        "panel": "shared",
+                        "showReuseMessage": True,
+                        "clear": False
+                    },
+                    "problemMatcher": []
+                },
+                {
+                    "label": "Run All Tests",
+                    "type": "shell",
+                    "command": "make",
+                    "args": ["test"],
+                    "group": "test",
+                    "presentation": {
+                        "echo": True,
+                        "reveal": "always",
+                        "focus": False,
+                        "panel": "shared",
+                        "showReuseMessage": True,
+                        "clear": False
+                    },
+                    "problemMatcher": []
+                },
+                {
+                    "label": "Run Backend Tests",
+                    "type": "shell",
+                    "command": "make",
+                    "args": ["test-backend"],
+                    "group": "test",
+                    "presentation": {
+                        "echo": True,
+                        "reveal": "always",
+                        "focus": False,
+                        "panel": "shared",
+                        "showReuseMessage": True,
+                        "clear": False
+                    },
+                    "problemMatcher": []
+                },
+                {
+                    "label": "Run Frontend Tests",
+                    "type": "shell",
+                    "command": "make",
+                    "args": ["test-frontend"],
+                    "group": "test",
+                    "presentation": {
+                        "echo": True,
+                        "reveal": "always",
+                        "focus": False,
+                        "panel": "shared",
+                        "showReuseMessage": True,
+                        "clear": False
+                    },
+                    "problemMatcher": []
+                },
+                {
+                    "label": "Lint All Code",
+                    "type": "shell",
+                    "command": "make",
+                    "args": ["lint"],
+                    "group": "build",
+                    "presentation": {
+                        "echo": True,
+                        "reveal": "always",
+                        "focus": False,
+                        "panel": "shared",
+                        "showReuseMessage": True,
+                        "clear": False
+                    },
+                    "problemMatcher": []
+                },
+                {
+                    "label": "Format All Code",
+                    "type": "shell",
+                    "command": "make",
+                    "args": ["format"],
+                    "group": "build",
+                    "presentation": {
+                        "echo": True,
+                        "reveal": "always",
+                        "focus": False,
+                        "panel": "shared",
+                        "showReuseMessage": True,
+                        "clear": False
+                    },
+                    "problemMatcher": []
+                },
+                {
+                    "label": "Generate TypeScript Types",
+                    "type": "shell",
+                    "command": "make",
+                    "args": ["types"],
+                    "group": "build",
+                    "presentation": {
+                        "echo": True,
+                        "reveal": "always",
+                        "focus": False,
+                        "panel": "shared",
+                        "showReuseMessage": True,
+                        "clear": False
+                    },
+                    "problemMatcher": []
+                },
+                {
+                    "label": "Clean Build Artifacts",
+                    "type": "shell",
+                    "command": "make",
+                    "args": ["clean"],
+                    "group": "build",
+                    "presentation": {
+                        "echo": True,
+                        "reveal": "always",
+                        "focus": False,
+                        "panel": "shared",
+                        "showReuseMessage": True,
+                        "clear": False
+                    },
+                    "problemMatcher": []
+                },
+                {
+                    "label": "Docker: Start Services",
+                    "type": "shell",
+                    "command": "make",
+                    "args": ["docker-up"],
+                    "group": "build",
+                    "presentation": {
+                        "echo": True,
+                        "reveal": "always",
+                        "focus": False,
+                        "panel": "shared",
+                        "showReuseMessage": True,
+                        "clear": False
+                    },
+                    "problemMatcher": []
+                },
+                {
+                    "label": "Docker: Stop Services",
+                    "type": "shell",
+                    "command": "make",
+                    "args": ["docker-down"],
+                    "group": "build",
+                    "presentation": {
+                        "echo": True,
+                        "reveal": "always",
+                        "focus": False,
+                        "panel": "shared",
+                        "showReuseMessage": True,
+                        "clear": False
+                    },
+                    "problemMatcher": []
+                },
+                {
+                    "label": "Database: Run Migrations",
+                    "type": "shell",
+                    "command": "make",
+                    "args": ["migrate"],
+                    "group": "build",
+                    "presentation": {
+                        "echo": True,
+                        "reveal": "always",
+                        "focus": False,
+                        "panel": "shared",
+                        "showReuseMessage": True,
+                        "clear": False
+                    },
+                    "problemMatcher": []
+                },
+                {
+                    "label": "Database: Reset Development DB",
+                    "type": "shell",
+                    "command": "make",
+                    "args": ["db-reset"],
+                    "group": "build",
+                    "presentation": {
+                        "echo": True,
+                        "reveal": "always",
+                        "focus": False,
+                        "panel": "shared",
+                        "showReuseMessage": True,
+                        "clear": False
+                    },
+                    "problemMatcher": []
+                }
+            ]
+        }

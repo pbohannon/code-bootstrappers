@@ -50,6 +50,9 @@ class BackendGenerator:
         if self.features.testing:
             self._create_basic_tests()
 
+        # Create validation scripts
+        self._create_validation_scripts()
+
         print("  ✓ Backend structure created with FastAPI and Poetry")
 
     def _get_pyproject_toml(self) -> str:
@@ -292,7 +295,7 @@ Application configuration using Pydantic settings.
 from functools import lru_cache
 from typing import List
 from pydantic import Field
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -324,9 +327,10 @@ class Settings(BaseSettings):
     # Frontend URL
     FRONTEND_URL: str = "http://localhost:3000"
     
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        case_sensitive=True
+    )
 
 
 @lru_cache()
@@ -335,31 +339,17 @@ def get_settings() -> Settings:
 '''
 
     def _get_api_router(self) -> str:
-        # Build imports and router includes based on features
-        imports = ['from src.app.api.v1.endpoints import health']
-        router_includes = ['api_router.include_router(health.router, prefix="/health", tags=["health"])']
-        
-        if self.features.authentication:
-            imports.append('from src.app.api.v1.endpoints import auth, users')
-            router_includes.extend([
-                'api_router.include_router(auth.router, prefix="/auth", tags=["authentication"])',
-                'api_router.include_router(users.router, prefix="/users", tags=["users"])'
-            ])
-        
-        imports_str = '\n'.join(imports)
-        includes_str = '\n'.join([f'{inc}' for inc in router_includes])
-        
-        return f'''"""
+        return '''"""
 API v1 router configuration.
 """
 from fastapi import APIRouter
 
-{imports_str}
+from src.app.api.v1.endpoints import health
 
 api_router = APIRouter()
 
 # Include endpoint routers
-{includes_str}
+api_router.include_router(health.router, prefix="/health", tags=["health"])
 '''
 
     def _create_endpoints(self):
@@ -393,99 +383,6 @@ async def health_check() -> HealthResponse:
 '''
         (self.project_dir / "backend" / "src" / "app" / "api" / "v1" / "endpoints" / "health.py").write_text(health_endpoint)
 
-        # Create authentication endpoints only if enabled
-        if self.features.authentication:
-            # Auth endpoint (placeholder)
-            auth_endpoint = '''"""
-Authentication endpoints.
-"""
-from datetime import datetime
-from fastapi import APIRouter
-from pydantic import BaseModel, EmailStr
-
-router = APIRouter()
-
-# Request Models
-class LoginRequest(BaseModel):
-    email: EmailStr
-    password: str
-
-class RegisterRequest(BaseModel):
-    email: EmailStr
-    password: str
-    full_name: str
-
-# Response Models
-class UserResponse(BaseModel):
-    id: str
-    email: str
-    full_name: str
-    is_active: bool
-    created_at: datetime
-
-class LoginResponse(BaseModel):
-    access_token: str
-    token_type: str = "bearer"
-    expires_in: int
-    user: UserResponse
-
-class MessageResponse(BaseModel):
-    message: str
-    success: bool = True
-
-@router.post("/login", response_model=LoginResponse)
-async def login(credentials: LoginRequest) -> LoginResponse:
-    """Login endpoint (placeholder - implement authentication logic)."""
-    # Placeholder response - implement actual authentication logic here
-    return LoginResponse(
-        access_token="placeholder_access_token",
-        expires_in=3600,
-        user=UserResponse(
-            id="placeholder_id",
-            email=credentials.email,
-            full_name="Placeholder User",
-            is_active=True,
-            created_at=datetime.now()
-        )
-    )
-
-@router.post("/register", response_model=LoginResponse)
-async def register(user_data: RegisterRequest) -> LoginResponse:
-    """Register endpoint (placeholder - implement registration logic)."""
-    # Placeholder response - implement actual registration logic here
-    return LoginResponse(
-        access_token="placeholder_access_token",
-        expires_in=3600,
-        user=UserResponse(
-            id="placeholder_id",
-            email=user_data.email,
-            full_name=user_data.full_name,
-            is_active=True,
-            created_at=datetime.now()
-        )
-    )
-
-@router.post("/logout", response_model=MessageResponse)  
-async def logout() -> MessageResponse:
-    """Logout endpoint (placeholder)."""
-    return MessageResponse(message="Logout successful")
-'''
-            (self.project_dir / "backend" / "src" / "app" / "api" / "v1" / "endpoints" / "auth.py").write_text(auth_endpoint)
-
-            # Users endpoint (placeholder)
-            users_endpoint = '''"""
-User management endpoints.
-"""
-from fastapi import APIRouter
-
-router = APIRouter()
-
-@router.get("/me")
-async def get_current_user() -> dict[str, str]:
-    """Get current user (placeholder)."""
-    return {"message": "Get current user - implement user logic here"}
-'''
-            (self.project_dir / "backend" / "src" / "app" / "api" / "v1" / "endpoints" / "users.py").write_text(users_endpoint)
 
     def _create_type_generation_script(self):
         """Create a type generation script."""
@@ -614,3 +511,19 @@ async def client():
         yield client
 '''
         (self.project_dir / "backend" / "tests" / "conftest.py").write_text(conftest_content)
+
+    def _create_validation_scripts(self):
+        """Create environment validation scripts."""
+        # Read validation script template
+        template_path = Path(__file__).parent.parent / "templates" / "validate_env.sh"
+        if template_path.exists():
+            validation_script = template_path.read_text()
+
+            # Create scripts directory if it doesn't exist
+            scripts_dir = self.project_dir / "backend" / "scripts"
+            scripts_dir.mkdir(exist_ok=True)
+
+            # Write validation script
+            validate_script_path = scripts_dir / "validate_env.sh"
+            validate_script_path.write_text(validation_script)
+            validate_script_path.chmod(0o755)  # Make executable

@@ -73,10 +73,14 @@ class MonorepoBootstrapper:
         
         # Help section
         help_commands = self.features.get_makefile_commands()
+        help_commands["setup"] = "Complete setup: install deps + validate environment"
+        help_commands["validate"] = "Validate entire development environment setup"
+        help_commands["validate-backend"] = "Validate backend environment only"
+
         makefile_content += "help:\n"
         makefile_content += "\t@echo \"Monorepo Management Commands:\"\n"
         for command, description in help_commands.items():
-            makefile_content += f"\t@echo \"  {command:<12} {description}\"\n"
+            makefile_content += f"\t@echo \"  {command:<17} {description}\"\n"
         makefile_content += "\n"
         
         # Install command (always present)
@@ -213,10 +217,26 @@ db-create:
 \tcd backend && poetry run alembic revision --autogenerate -m "$(message)"
 
 """
-            
-            # Database reset command (conditional based on Docker)
-            if self.features.docker:
-                makefile_content += """# Development database commands
+
+        # Validation commands (always present)
+        makefile_content += """# Environment validation commands
+validate:
+\t@echo "🔍 Validating entire development environment..."
+\t./scripts/validate_setup.sh
+
+validate-backend:
+\t@echo "🔍 Validating backend environment..."
+\tcd backend && ./scripts/validate_env.sh
+
+setup: install validate
+\t@echo "🎉 Development environment setup complete!"
+\t@echo "Next: copy .env files and run 'make dev'"
+
+"""
+
+        # Database reset command (conditional based on Docker)
+        if self.features.database and self.features.docker:
+            makefile_content += """# Development database commands
 db-reset:
 \tdocker-compose -f infrastructure/docker/docker-compose.dev.yml down -v
 \tdocker-compose -f infrastructure/docker/docker-compose.dev.yml up -d db
@@ -262,6 +282,9 @@ db-reset:
             # Scripts and tools
             "scripts/development",
             "tools",
+
+            # Documentation
+            "docs",
         ]
 
         # Feature-specific directories
@@ -396,7 +419,7 @@ db-reset:
         self._use_template("gitignore.template", ".gitignore")
 
         # Use template for README with substitutions
-        readme_content = self._use_template("readme.template", None)
+        readme_content = self._use_template("readme_prescriptive.template", None)
         readme_content = readme_content.replace("{project_name}", self.project_name)
         readme_content = readme_content.replace("{project_title}", self.project_name.replace("_", " ").title())
         readme_content = readme_content.replace("{frontend_type}", self.frontend_type.title())
@@ -507,6 +530,35 @@ export interface User {
 
         (self.project_dir / "shared" / "types" / "index.ts").write_text(shared_types)
 
+        # Create docs directory and add troubleshooting guide
+        docs_dir = self.project_dir / "docs"
+        docs_dir.mkdir(exist_ok=True)
+
+        # Add troubleshooting guide
+        troubleshooting_template = Path(__file__).parent / "templates" / "troubleshooting.md"
+        if troubleshooting_template.exists():
+            troubleshooting_content = troubleshooting_template.read_text()
+            troubleshooting_content = troubleshooting_content.replace("{project_name}", self.project_name)
+            (docs_dir / "TROUBLESHOOTING.md").write_text(troubleshooting_content)
+
+    def create_validation_scripts(self):
+        """Create validation scripts for the entire monorepo."""
+        print("✅ Creating validation scripts...")
+
+        # Root validation script
+        template_path = Path(__file__).parent / "templates" / "validate_setup.sh"
+        if template_path.exists():
+            validation_script = template_path.read_text()
+
+            # Create scripts directory if it doesn't exist
+            scripts_dir = self.project_dir / "scripts"
+            scripts_dir.mkdir(exist_ok=True)
+
+            # Write validation script
+            validate_script_path = scripts_dir / "validate_setup.sh"
+            validate_script_path.write_text(validation_script)
+            validate_script_path.chmod(0o755)  # Make executable
+
     def run(self):
         """Execute the monorepo bootstrap process."""
         self.features.print_summary(self.project_name, self.frontend_type)
@@ -526,7 +578,8 @@ export interface User {
             self.create_github_workflows()
 
         self.create_shared_utilities()
-        
+        self.create_validation_scripts()
+
         if self.features.init_git:
             self.initialize_git_repository()
 
@@ -579,7 +632,7 @@ export interface User {
         """Print contextual next steps based on enabled features."""
         print("\n📚 Next steps:")
         print(f"  1. cd {self.project_name}")
-        print("  2. make install  # Install all dependencies")
+        print("  2. make setup    # Install dependencies and validate environment")
         print("  3. cp backend/.env.example backend/.env")
         print("  4. cp frontend/.env.example frontend/.env")
 

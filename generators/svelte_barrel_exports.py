@@ -102,7 +102,6 @@ export { default as Footer } from './Footer/Footer.svelte';
         """Create forms components barrel export."""
         forms_index = '''// Form-specific components
 export { default as UserForm } from './UserForm/UserForm.svelte';
-export { default as LoginForm } from './LoginForm/LoginForm.svelte';
 export { default as ContactForm } from './ContactForm/ContactForm.svelte';
 '''
         (self.frontend_dir / "src" / "lib" / "components" / "forms" / "index.ts").write_text(forms_index)
@@ -110,17 +109,12 @@ export { default as ContactForm } from './ContactForm/ContactForm.svelte';
     def _create_features_components_barrel(self) -> None:
         """Create features components barrel export."""
         features_index = '''// Feature-specific components
-export * from './auth/index.js';
 export * from './dashboard/index.js';
 export * from './profile/index.js';
 '''
         (self.frontend_dir / "src" / "lib" / "components" / "features" / "index.ts").write_text(features_index)
         
         # Create feature-specific barrel exports
-        auth_index = '''// Authentication feature components
-// Add auth-specific components here as they are created
-'''
-        (self.frontend_dir / "src" / "lib" / "components" / "features" / "auth" / "index.ts").write_text(auth_index)
         
         dashboard_index = '''// Dashboard feature components
 // Add dashboard-specific components here as they are created
@@ -135,7 +129,6 @@ export * from './profile/index.js';
     def _create_stores_barrel(self) -> None:
         """Create stores barrel export."""
         stores_index = '''// Global state stores
-export { authStore } from './auth.js';
 export { themeStore } from './theme.js';
 export { notificationStore } from './notifications.js';
 export { globalStore, notify } from './global.js';
@@ -157,7 +150,6 @@ export * from './constants.js';
         """Create types barrel export."""
         types_index = '''// TypeScript type definitions
 export type * from './api.js';
-export type * from './auth.js';
 export type * from './ui.js';
 export type * from './global.js';
 '''
@@ -198,6 +190,5 @@ export * from './api.js';
         config_index = '''// Configuration settings
 export * from './database.js';
 export * from './api.js';
-export * from './auth.js';
 '''
         (self.frontend_dir / "src" / "lib" / "config" / "index.ts").write_text(config_index)

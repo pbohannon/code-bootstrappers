@@ -24,7 +24,6 @@ class SvelteFormsGenerator(BaseSvelteGenerator):
         
         # Create individual form components
         self._create_user_form()
-        self._create_login_form() 
         self._create_contact_form()
         
         print("  ✓ Svelte form components created")
